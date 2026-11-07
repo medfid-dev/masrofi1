@@ -9,6 +9,7 @@ import 'community_screen.dart';
 import 'cloud.dart';
 import 'notif_reader.dart';
 import 'places.dart';
+import 'updater.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,9 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) promptUpdate(context);
+    });
   }
 
   @override

@@ -6,6 +6,7 @@ import 'cloud.dart';
 import 'config.dart';
 import 'notif_reader.dart';
 import 'places.dart';
+import 'updater.dart';
 
 class SettingsScreen extends StatelessWidget {
   final AppStore store;
@@ -216,6 +217,15 @@ class SettingsScreen extends StatelessWidget {
                   OutlinedButton(onPressed: () => _account(context), child: Text(Cloud.email != null ? 'خروج' : 'إنشاء حساب / دخول')),
                 ]),
               ],
+            ]),
+            Sheet(title: 'التحديث', children: [
+              Text('رقم النسخة: ${buildNumber == 0 ? 'تجريبية' : buildNumber}'),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.system_update),
+                label: const Text('التحقق من تحديث'),
+                onPressed: () => promptUpdate(context, manual: true),
+              ),
             ]),
             Sheet(title: 'بياناتك', children: [
               const Text('بياناتك محفوظة على هذا الجهاز فقط في هذه النسخة.'),

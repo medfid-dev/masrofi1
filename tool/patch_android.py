@@ -9,7 +9,7 @@ m = mf.read_text(encoding='utf-8')
 perms = ''.join(
     f'    <uses-permission android:name="android.permission.{p}"/>\n'
     for p in ('POST_NOTIFICATIONS', 'RECEIVE_BOOT_COMPLETED', 'INTERNET', 'ACCESS_FINE_LOCATION',
-              'ACCESS_COARSE_LOCATION', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_LOCATION')
+              'ACCESS_COARSE_LOCATION', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_LOCATION', 'REQUEST_INSTALL_PACKAGES')
     if p not in m
 )
 m = m.replace('<application', perms + '    <application', 1) if perms else m
@@ -52,6 +52,37 @@ if kts:
 else:
     t = re.sub(r'compileOptions\s*\{', 'compileOptions {\n        coreLibraryDesugaringEnabled true', t, count=1)
     t += '\ndependencies {\n    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.4"\n}\n'
+# توقيع ثابت للإصدار (من متغيرات البيئة في GitHub) وإلا يُستخدم مفتاح التصحيح
+if kts:
+    sc = """signingConfigs {
+        create("release") {
+            val ks = System.getenv("KEYSTORE_PATH")
+            if (ks != null) {
+                storeFile = file(ks)
+                storePassword = System.getenv("KS_PASS")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KS_PASS")
+            }
+        }
+    }
+    buildTypes {"""
+    t = t.replace('buildTypes {', sc, 1)
+    t = t.replace('signingConfigs.getByName("debug")',
+                  'if (System.getenv("KEYSTORE_PATH") != null) signingConfigs.getByName("release") else signingConfigs.getByName("debug")')
+else:
+    sc = """signingConfigs {
+        release {
+            if (System.getenv("KEYSTORE_PATH") != null) {
+                storeFile file(System.getenv("KEYSTORE_PATH"))
+                storePassword System.getenv("KS_PASS")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KS_PASS")
+            }
+        }
+    }
+    buildTypes {"""
+    t = t.replace('buildTypes {', sc, 1)
+    t = t.replace('signingConfigs.debug', 'System.getenv("KEYSTORE_PATH") != null ? signingConfigs.release : signingConfigs.debug')
 g.write_text(t, encoding='utf-8')
 print('patched', mf, g)
 
