@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main, master]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,16 +18,37 @@ jobs:
         run: |
           flutter create --org com.example --project-name masrofi --platforms=android app
           cd app
-          flutter pub add shared_preferences flutter_local_notifications:^18.0.1 timezone supabase_flutter geolocator geolocator_android
+          flutter pub add shared_preferences flutter_local_notifications:^18.0.1 timezone supabase_flutter geolocator geolocator_android path_provider open_filex
           rm -f lib/main.dart test/widget_test.dart
           cp -r ../lib/. lib/
           mkdir -p test && cp -r ../test/. test/
           python3 ../tool/patch_android.py .
       - name: tests
         run: cd app && flutter test
+      - name: signing key
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/masrofi.jks"
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/masrofi.jks" >> "$GITHUB_ENV"
+            echo "KEY_ALIAS=masrofi" >> "$GITHUB_ENV"
+          else
+            echo "تحذير: لا يوجد KEYSTORE_B64، سيُستخدم مفتاح مؤقت ولن تعمل التحديثات فوق النسخة القديمة"
+          fi
       - name: build
-        run: cd app && flutter build apk --release
+        env:
+          KS_PASS: ${{ secrets.KEYSTORE_PASS }}
+        run: cd app && flutter build apk --release --build-number=${{ github.run_number }} --dart-define=BUILD=${{ github.run_number }}
+      - name: rename
+        run: cp app/build/app/outputs/flutter-apk/app-release.apk masrofi.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: masrofi-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          name: masrofi
+          path: masrofi.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: مصروفي ${{ github.run_number }}
+          files: masrofi.apk
+          make_latest: true
