@@ -105,13 +105,15 @@ class _AddScreenState extends State<AddScreen> {
     final h = widget.store.hourly;
     final a = amount;
     final selected = options.contains(cat) ? cat! : options.first;
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('إضافة عملية')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           SegmentedButton<bool>(
+            showSelectedIcon: false,
             segments: const [
               ButtonSegment(value: false, label: Text('مصروف')),
               ButtonSegment(value: true, label: Text('دخل')),
@@ -122,51 +124,57 @@ class _AddScreenState extends State<AddScreen> {
               cat = null;
             }),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
           TextField(
             controller: amt,
+            autofocus: false,
+            textAlign: TextAlign.center,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'المبلغ', suffixText: 'د.ج', border: OutlineInputBorder()),
+            style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: income ? Colors.green.shade700 : cs.error),
+            decoration: const InputDecoration(hintText: '0', suffixText: 'د.ج'),
             onChanged: (_) => setState(() {}),
           ),
           if (!income && h > 0 && a != null && a > 0)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('≈ ${(a / h).toStringAsFixed(1)} ساعة من عملك'),
+              child: Center(child: Text('≈ ${(a / h).toStringAsFixed(1)} ساعة من عملك', style: TextStyle(color: cs.outline))),
             ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: selected,
-            decoration: InputDecoration(labelText: income ? 'مصدر الدخل' : 'الفئة', border: const OutlineInputBorder()),
-            items: [for (final c in options) DropdownMenuItem(value: c, child: Text(c))],
-            onChanged: (v) => setState(() => cat = v),
-          ),
-          if (!income)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(onPressed: newCat, icon: const Icon(Icons.add), label: const Text('فئة جديدة')),
-            ),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
-              onPressed: pickDate,
-              icon: const Icon(Icons.event),
-              label: Text(_isToday ? 'التاريخ: اليوم' : 'التاريخ: ${at.year}-${p2(at.month)}-${p2(at.day)}'),
-            ),
-          ),
+          const SizedBox(height: 20),
+          Text(income ? 'المصدر' : 'الفئة', style: const TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 6, children: [
+            for (final c in options)
+              ChoiceChip(
+                label: Text('${catEmoji(c)} $c'),
+                selected: selected == c,
+                onSelected: (_) => setState(() => cat = c),
+              ),
+            if (!income) ActionChip(avatar: const Icon(Icons.add, size: 18), label: const Text('فئة'), onPressed: newCat),
+          ]),
+          const SizedBox(height: 18),
           TextField(
             controller: note,
-            decoration: const InputDecoration(labelText: 'الوصف (اختياري)', border: OutlineInputBorder()),
+            decoration: const InputDecoration(hintText: 'ملاحظة (اختياري)'),
           ),
-          if (!income)
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('اشتراك متكرر'),
-              value: sub,
-              onChanged: (v) => setState(() => sub = v),
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: pickDate,
+                icon: const Icon(Icons.event, size: 18),
+                label: Text(_isToday ? 'اليوم' : '${at.year}-${p2(at.month)}-${p2(at.day)}'),
+              ),
             ),
-          const SizedBox(height: 8),
+            if (!income) ...[
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('اشتراك متكرر'),
+                selected: sub,
+                onSelected: (v) => setState(() => sub = v),
+              ),
+            ],
+          ]),
+          const SizedBox(height: 22),
           FilledButton(onPressed: save, child: Text(income ? 'حفظ الدخل' : 'حفظ المصروف')),
         ],
       ),
