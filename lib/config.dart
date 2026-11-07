@@ -1,6 +1,4 @@
-// ضع هنا بيانات مشروع Supabase (Project Settings ← API).
-// مفتاح anon مصمَّم ليكون علنياً؛ الحماية تأتي من سياسات RLS في ملف supabase/schema.sql.
-const String supabaseUrl = '';
-const String supabaseAnonKey = '';
+const String supabaseUrl = 'https://uhlktsguzjiebpqvvqal.supabase.co';
+const String supabaseAnonKey = 'sb_publishable_rBAA93t-arOynsM4vP4XAw_W-5BjEjL';
 
 bool get cloudConfigured => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
